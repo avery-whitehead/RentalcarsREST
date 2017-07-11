@@ -27,11 +27,18 @@ public class VehicleOutput {
         Type listType = new TypeToken<List<Vehicle>>(){}.getType();
         //Converts the JSON array to a list of Vehicle objects
         vehicleList = gson.fromJson(jsonArray, listType);
+        //Calculates and sets the SIPP specifications
+        for (Vehicle vehicle : vehicleList) {
+            vehicle.setCarType(vehicle.calculateCarType());
+            vehicle.setDoors(vehicle.calculateDoors());
+            vehicle.setTransmission(vehicle.calculateTransmission());
+            vehicle.setFuel(vehicle.calculateFuel());
+            vehicle.setAirCon(vehicle.calculateAirCon());
+        }
     }
 
     /**
-     *
-     * @return
+     * @return a list of cars in ascending price order
      */
     @GET
     @Path("/price")
@@ -47,20 +54,16 @@ public class VehicleOutput {
         return priceOutput;
     }
 
+    /**
+     * @return a SIPP specification of the cars
+     */
     @GET
     @Path("/sipp")
     @Produces("text/plain")
     public String getSippOutput() {
         String sippOutput = "";
-        //Calculates and sets the SIPP specifications
+        //Builds the SIPP specifications in the appropriate format
         for (int i = 0; i < vehicleList.size(); i++) {
-            vehicleList.get(i).setCarType(vehicleList.get(i).calculateCarType());
-            vehicleList.get(i).setDoors(vehicleList.get(i).calculateDoors());
-            vehicleList.get(i).setTransmission(vehicleList.get(i).calculateTransmission());
-            vehicleList.get(i).setFuel(vehicleList.get(i).calculateFuel());
-            vehicleList.get(i).setAirCon(vehicleList.get(i).calculateAirCon());
-            //Builds the SIPP specifications in the appropriate format
-            //Line breaks work in the page source but not the page display, don't know why
             sippOutput = sippOutput + (i + 1) + ". " + vehicleList.get(i).getName() + " - " + vehicleList.get(i).getSipp() +
                     " - " + vehicleList.get(i).getCarType() + " - " + vehicleList.get(i).getDoors() + " - " +
                     vehicleList.get(i).getTransmission() + " - " + vehicleList.get(i).getFuel() + " - " +
@@ -69,6 +72,9 @@ public class VehicleOutput {
         return sippOutput;
     }
 
+    /**
+     * @return the highest rated supplier per car type in descending order
+     */
     @GET
     @Path("/supplier")
     @Produces("text/plain")
@@ -84,11 +90,8 @@ public class VehicleOutput {
         ArrayList<Vehicle> tempArrayList = new ArrayList<>();
         //Makes another ArrayList for holding the highest rated cars
         ArrayList<Vehicle> maxArrayList = new ArrayList<>();
-        //return carTypesArray.get(0);
-        return "hi " + vehicleList.get(0).getCarType();
-
         //Finds the highest rated vehicle of each car type
-        /*for (String aCarTypesArray : carTypesArray) {
+        for (String aCarTypesArray : carTypesArray) {
             //Adds every vehicle of each car type to the temporary ArrayList
             for (Vehicle vehicle : vehicleList) {
                 if (vehicle.getCarType().equals(aCarTypesArray)) {
@@ -108,6 +111,34 @@ public class VehicleOutput {
                     " - " + maxArrayList.get(i).getSupplier() + " - " + maxArrayList.get(i).getRating() + "\n";
         }
         return supplierOutput;
-    }*/
+    }
+
+    /**
+     * Calculates a vehicle score based on a breakdown and supplier rating
+     * @return a list of cars ordered by the score in descending order
+     */
+    @GET
+    @Path("/score")
+    @Produces("text/plain")
+    public String getScoreOutput() {
+        String scoreOutput = "";
+        for (Vehicle vehicle : vehicleList) {
+            if (vehicle.getTransmission().equals("Manual"))
+                vehicle.setBreakdownScore(vehicle.getBreakdownScore() + 1);
+            if (vehicle.getTransmission().equals("Automatic"))
+                vehicle.setBreakdownScore(vehicle.getBreakdownScore() + 5);
+            if (vehicle.getAirCon().equals("AC"))
+                vehicle.setBreakdownScore(vehicle.getBreakdownScore() + 2);
+            //Combines breakdown score and supplier rating score to create a sum of scores for each vehicle
+            vehicle.setSumOfScores(vehicle.getBreakdownScore() + vehicle.getRating());
+        }
+        //Sorts the vehicles list in descending order according to the sum of scores
+        vehicleList.sort(Comparator.comparing(Vehicle::getSumOfScores).reversed());
+        //Prints a list of the car scores in the appropriate format
+        for (int i = 0; i < vehicleList.size(); i++) {
+            scoreOutput = scoreOutput + (i + 1) + ". " + vehicleList.get(i).getName() + " - " + vehicleList.get(i).getBreakdownScore() +
+                    " - " + vehicleList.get(i).getRating() + " - " + vehicleList.get(i).getSumOfScores() + "\n";
+        }
+        return scoreOutput;
     }
 }
