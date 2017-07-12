@@ -12,7 +12,7 @@ import java.lang.reflect.Type;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// The Java class will be hosted at the URI path "/helloworld"
+//Class hosted at the URI path "/rentalcars"
 @Path("/rentalcars")
 public class VehicleOutput {
     private List<Vehicle> vehicleList;
